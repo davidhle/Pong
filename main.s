@@ -82,34 +82,6 @@ erase:
 	.word	drawPlayer
 	.size	erase, .-erase
 	.align	2
-	.global	delay
-	.type	delay, %function
-delay:
-	@ Function supports interworking.
-	@ args = 0, pretend = 0, frame = 8
-	@ frame_needed = 0, uses_anonymous_args = 0
-	@ link register save eliminated.
-	rsb	r1, r0, r0, asl #5
-	add	r0, r0, r1, asl #2
-	add	r0, r0, r0, asl #2
-	mov	r3, #0
-	mov	r1, r0, asl #4
-	sub	sp, sp, #8
-	cmp	r1, r3
-	str	r3, [sp, #4]
-	ble	.L7
-.L9:
-	ldr	r2, [sp, #4]
-	add	r3, r3, #1
-	add	r2, r2, #1
-	cmp	r3, r1
-	str	r2, [sp, #4]
-	bne	.L9
-.L7:
-	add	sp, sp, #8
-	bx	lr
-	.size	delay, .-delay
-	.align	2
 	.global	updatePaddle1
 	.type	updatePaddle1, %function
 updatePaddle1:
@@ -120,20 +92,20 @@ updatePaddle1:
 	mov	r3, #67108864
 	ldr	r3, [r3, #304]
 	tst	r3, #64
-	bne	.L13
-	ldr	r3, .L15
+	bne	.L8
+	ldr	r3, .L11
 	ldr	r2, [r3, #8]
 	sub	r2, r2, #3
 	cmp	r2, #24
 	str	r2, [r3, #8]
 	movle	r2, #25
 	strle	r2, [r3, #8]
-.L13:
+.L8:
 	mov	r3, #67108864
 	ldr	r3, [r3, #304]
 	tst	r3, #128
 	bxne	lr
-	ldr	r3, .L15
+	ldr	r3, .L11
 	ldr	r2, [r3, #8]
 	add	r2, r2, #3
 	cmp	r2, #115
@@ -141,9 +113,9 @@ updatePaddle1:
 	movgt	r2, #115
 	strgt	r2, [r3, #8]
 	bx	lr
-.L16:
+.L12:
 	.align	2
-.L15:
+.L11:
 	.word	.LANCHOR0
 	.size	updatePaddle1, .-updatePaddle1
 	.align	2
@@ -157,20 +129,20 @@ updatePaddle2:
 	mov	r3, #67108864
 	ldr	r3, [r3, #304]
 	tst	r3, #32
-	bne	.L18
-	ldr	r3, .L20
+	bne	.L14
+	ldr	r3, .L16
 	ldr	r2, [r3, #12]
 	sub	r2, r2, #3
 	cmp	r2, #24
 	str	r2, [r3, #12]
 	movle	r2, #25
 	strle	r2, [r3, #12]
-.L18:
+.L14:
 	mov	r3, #67108864
 	ldr	r3, [r3, #304]
 	tst	r3, #16
 	bxne	lr
-	ldr	r3, .L20
+	ldr	r3, .L16
 	ldr	r2, [r3, #12]
 	add	r2, r2, #3
 	cmp	r2, #115
@@ -178,9 +150,9 @@ updatePaddle2:
 	movgt	r2, #115
 	strgt	r2, [r3, #12]
 	bx	lr
-.L21:
+.L17:
 	.align	2
-.L20:
+.L16:
 	.word	.LANCHOR0
 	.size	updatePaddle2, .-updatePaddle2
 	.align	2
@@ -191,9 +163,9 @@ borders:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 0, uses_anonymous_args = 0
 	stmfd	sp!, {r3, r4, r5, lr}
-	ldr	r5, .L29
+	ldr	r5, .L25
 	mov	r4, #0
-.L23:
+.L19:
 	mov	r1, r4
 	mov	r0, #24
 	mov	r2, #31744
@@ -201,9 +173,9 @@ borders:
 	mov	lr, pc
 	bx	r5
 	cmp	r4, #240
-	bne	.L23
+	bne	.L19
 	mov	r4, #0
-.L24:
+.L20:
 	mov	r0, r4
 	mov	r1, #120
 	mov	r2, #31744
@@ -211,9 +183,9 @@ borders:
 	mov	lr, pc
 	bx	r5
 	cmp	r4, #24
-	bne	.L24
+	bne	.L20
 	mov	r4, #0
-.L25:
+.L21:
 	mov	r1, r4
 	mov	r0, #135
 	mov	r2, #31744
@@ -221,14 +193,64 @@ borders:
 	mov	lr, pc
 	bx	r5
 	cmp	r4, #240
-	bne	.L25
+	bne	.L21
 	ldmfd	sp!, {r3, r4, r5, lr}
 	bx	lr
-.L30:
+.L26:
 	.align	2
-.L29:
+.L25:
 	.word	setPixel
 	.size	borders, .-borders
+	.align	2
+	.global	main
+	.type	main, %function
+main:
+	@ Function supports interworking.
+	@ args = 0, pretend = 0, frame = 0
+	@ frame_needed = 0, uses_anonymous_args = 0
+	stmfd	sp!, {r3, r4, r5, r6, r7, lr}
+	ldr	r5, .L31
+	ldr	r2, [r5, #0]
+	mov	r3, #1024
+	add	r3, r3, #3
+	cmp	r2, #0
+	mov	r2, #67108864
+	strh	r3, [r2, #0]	@ movhi
+	bne	.L28
+	ldr	r7, .L31+4
+	ldr	r4, .L31+8
+	ldr	r6, .L31+12
+.L29:
+	bl	borders
+	bl	updatePaddle1
+	bl	updatePaddle2
+	ldr	r1, [r4, #20]
+	ldmia	r4, {r2, r3}	@ phole ldm
+	ldr	r0, [r4, #16]
+	add	r3, r1, r3
+	add	r2, r0, r2
+	stmia	r4, {r2, r3}	@ phole stm
+	bl	draw
+	mov	lr, pc
+	bx	r6
+	bl	erase
+	mov	lr, pc
+	bx	r7
+	ldr	r3, [r5, #0]
+	cmp	r3, #0
+	beq	.L29
+.L28:
+	mov	r0, #0
+	ldmfd	sp!, {r3, r4, r5, r6, r7, lr}
+	bx	lr
+.L32:
+	.align	2
+.L31:
+	.word	.LANCHOR1
+	.word	handleCollisions
+	.word	.LANCHOR0
+	.word	waitForVBlank
+	.size	main, .-main
 	.align	2
 	.global	updateScore1
 	.type	updateScore1, %function
@@ -237,33 +259,33 @@ updateScore1:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 0, uses_anonymous_args = 0
 	stmfd	sp!, {r4, lr}
-	ldr	r4, .L38
+	ldr	r4, .L40
 	sub	sp, sp, #8
-	ldr	r2, [r4, #0]
+	ldr	r2, [r4, #4]
 	cmp	r2, #1
-	beq	.L35
-	cmp	r2, #2
-	beq	.L36
-	cmp	r2, #3
 	beq	.L37
-.L31:
+	cmp	r2, #2
+	beq	.L38
+	cmp	r2, #3
+	beq	.L39
+.L33:
 	add	sp, sp, #8
 	ldmfd	sp!, {r4, lr}
 	bx	lr
-.L37:
+.L39:
 	mov	r2, #2
 	mov	ip, #31
 	mov	r3, r2
 	str	ip, [sp, #0]
 	mov	r0, #10
 	mov	r1, #20
-	ldr	ip, .L38+4
+	ldr	ip, .L40+4
 	mov	lr, pc
 	bx	ip
 	mov	r3, #1
-	str	r3, [r4, #4]
-	b	.L31
-.L35:
+	str	r3, [r4, #0]
+	b	.L33
+.L37:
 	mov	ip, #32512
 	mov	r2, #2
 	add	ip, ip, #224
@@ -271,24 +293,24 @@ updateScore1:
 	mov	r0, #10
 	mov	r1, #100
 	mov	r3, r2
-	ldr	ip, .L38+4
+	ldr	ip, .L40+4
 	mov	lr, pc
 	bx	ip
-	b	.L31
-.L36:
+	b	.L33
+.L38:
 	mov	ip, #32512
 	add	ip, ip, #224
 	str	ip, [sp, #0]
 	mov	r0, #10
 	mov	r1, #60
 	mov	r3, r2
-	ldr	ip, .L38+4
+	ldr	ip, .L40+4
 	mov	lr, pc
 	bx	ip
-	b	.L31
-.L39:
+	b	.L33
+.L41:
 	.align	2
-.L38:
+.L40:
 	.word	.LANCHOR1
 	.word	drawRect
 	.size	updateScore1, .-updateScore1
@@ -300,189 +322,154 @@ updateScore2:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 0, uses_anonymous_args = 0
 	stmfd	sp!, {r4, lr}
-	ldr	r4, .L47
+	ldr	r4, .L49
 	sub	sp, sp, #8
 	ldr	r2, [r4, #8]
 	cmp	r2, #1
 	moveq	r2, #2
 	moveq	r0, #10
 	moveq	r1, #135
-	beq	.L44
-	cmp	r2, #2
-	beq	.L45
-	cmp	r2, #3
 	beq	.L46
-.L40:
+	cmp	r2, #2
+	beq	.L47
+	cmp	r2, #3
+	beq	.L48
+.L42:
 	add	sp, sp, #8
 	ldmfd	sp!, {r4, lr}
 	bx	lr
-.L45:
+.L47:
 	mov	r0, #10
 	mov	r1, #175
-.L44:
+.L46:
 	mov	ip, #992
 	str	ip, [sp, #0]
 	mov	r3, r2
-	ldr	ip, .L47+4
+	ldr	ip, .L49+4
 	mov	lr, pc
 	bx	ip
-	b	.L40
-.L46:
+	b	.L42
+.L48:
 	mov	r2, #2
 	mov	ip, #31
 	mov	r3, r2
 	str	ip, [sp, #0]
 	mov	r0, #10
 	mov	r1, #215
-	ldr	ip, .L47+4
+	ldr	ip, .L49+4
 	mov	lr, pc
 	bx	ip
 	mov	r3, #1
-	str	r3, [r4, #4]
-	b	.L40
-.L48:
+	str	r3, [r4, #0]
+	b	.L42
+.L50:
 	.align	2
-.L47:
+.L49:
 	.word	.LANCHOR1
 	.word	drawRect
 	.size	updateScore2, .-updateScore2
 	.align	2
-	.global	main
-	.type	main, %function
-main:
+	.global	handleCollisions
+	.type	handleCollisions, %function
+handleCollisions:
 	@ Function supports interworking.
-	@ args = 0, pretend = 0, frame = 8
+	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 0, uses_anonymous_args = 0
-	stmfd	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
-	mov	r3, #1024
-	add	r3, r3, #3
-	mov	r2, #67108864
-	sub	sp, sp, #12
-	mov	r4, #9984
-	strh	r3, [r2, #0]	@ movhi
-	ldr	r7, .L73
-	ldr	r5, .L73+4
-	ldr	r8, .L73+8
-	add	r4, r4, #16
-	mov	r9, #132
-	mov	sl, #28
-	mov	fp, #1
-.L68:
-	ldr	r6, [r7, #4]
-	cmp	r6, #0
-	bne	.L69
-.L62:
-	bl	borders
-	bl	updatePaddle1
-	bl	updatePaddle2
-	ldmia	r5, {r2, r3}	@ phole ldm
-	add	r0, r5, #16
-	ldmia	r0, {r0, r1}	@ phole ldm
-	add	r3, r1, r3
-	add	r2, r0, r2
-	stmia	r5, {r2, r3}	@ phole stm
-	mov	lr, pc
-	bx	r8
-	bl	draw
-	str	r6, [sp, #4]
-.L51:
-	ldr	r3, [sp, #4]
-	add	r6, r6, #1
-	add	r3, r3, #1
-	cmp	r6, r4
-	str	r3, [sp, #4]
-	bne	.L51
-	bl	erase
-	ldr	r3, [r5, #0]
+	stmfd	sp!, {r3, r4, r5, lr}
+	ldr	r4, .L66
+	ldr	r3, [r4, #0]
 	cmp	r3, #27
 	bgt	.L52
-	ldr	r3, [r5, #16]
+	ldr	r3, [r4, #16]
 	rsb	r3, r3, #0
-	str	r3, [r5, #16]
-	ldr	r3, [r5, #4]
+	str	r3, [r4, #16]
+	ldr	r3, [r4, #4]
+	mov	r2, #28
 	cmp	r3, #5
-	str	sl, [r5, #0]
-	beq	.L70
+	str	r2, [r4, #0]
+	ldr	r5, .L66
+	beq	.L62
 .L54:
 	cmp	r3, #0
-	beq	.L71
+	beq	.L63
 	cmp	r3, #236
-	beq	.L72
+	beq	.L64
 	cmp	r3, #239
-	bne	.L68
-	ldr	r3, [r7, #0]
-	add	r3, r3, #1
-	str	r3, [r7, #0]
-	bl	updateScore1
-	ldr	r3, [r5, #20]
-	mov	r2, #238
-	rsb	r3, r3, #0
-	str	r2, [r5, #4]
-	str	r3, [r5, #20]
-	b	.L68
+	beq	.L65
+.L51:
+	ldmfd	sp!, {r3, r4, r5, lr}
+	bx	lr
 .L52:
 	cmp	r3, #132
-	ldrgt	r3, [r5, #16]
+	ldrgt	r3, [r4, #16]
 	rsbgt	r3, r3, #0
-	strgt	r3, [r5, #16]
-	ldr	r3, [r5, #4]
-	strgt	r9, [r5, #0]
+	strgt	r3, [r4, #16]
+	ldr	r3, [r4, #4]
+	movgt	r2, #132
+	strgt	r2, [r4, #0]
 	cmp	r3, #5
+	ldr	r5, .L66
 	bne	.L54
-.L70:
+.L62:
 	ldr	r2, [r5, #8]
 	ldr	r3, [r5, #0]
 	sub	r1, r2, #19
 	cmp	r1, r3
-	bgt	.L68
+	bgt	.L51
 	add	r2, r2, #19
 	cmp	r3, r2
-	bgt	.L68
+	bgt	.L51
 	ldr	r3, [r5, #20]
 	mov	r2, #6
 	rsb	r3, r3, #0
 	str	r2, [r5, #4]
 	str	r3, [r5, #20]
-	b	.L68
-.L71:
-	ldr	r3, [r7, #8]
-	add	r3, r3, #1
-	str	r3, [r7, #8]
+	b	.L51
+.L63:
+	ldr	r3, .L66+4
+	ldr	r2, [r3, #8]
+	add	r2, r2, #1
+	str	r2, [r3, #8]
 	bl	updateScore2
 	ldr	r3, [r5, #20]
-	ldr	r6, [r7, #4]
+	mov	r2, #1
 	rsb	r3, r3, #0
-	cmp	r6, #0
-	str	fp, [r5, #4]
+	str	r2, [r5, #4]
 	str	r3, [r5, #20]
-	beq	.L62
-.L69:
-	mov	r0, #0
-	add	sp, sp, #12
-	ldmfd	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
-	bx	lr
-.L72:
-	ldr	r2, [r5, #12]
-	ldr	r3, [r5, #0]
+	b	.L51
+.L64:
+	ldr	r2, [r4, #12]
+	ldr	r3, [r4, #0]
 	sub	r1, r2, #19
 	cmp	r1, r3
-	bgt	.L68
+	bgt	.L51
 	add	r2, r2, #19
 	cmp	r3, r2
-	bgt	.L68
+	bgt	.L51
 	ldr	r3, [r5, #20]
 	mov	r2, #235
 	rsb	r3, r3, #0
 	str	r2, [r5, #4]
 	str	r3, [r5, #20]
-	b	.L68
-.L74:
+	b	.L51
+.L65:
+	ldr	r3, .L66+4
+	ldr	r2, [r3, #4]
+	add	r2, r2, #1
+	str	r2, [r3, #4]
+	bl	updateScore1
+	ldr	r3, [r4, #20]
+	mov	r2, #238
+	rsb	r3, r3, #0
+	str	r2, [r4, #4]
+	str	r3, [r4, #20]
+	b	.L51
+.L67:
 	.align	2
-.L73:
-	.word	.LANCHOR1
+.L66:
 	.word	.LANCHOR0
-	.word	waitForVBlank
-	.size	main, .-main
+	.word	.LANCHOR1
+	.size	handleCollisions, .-handleCollisions
 	.global	row
 	.global	col
 	.global	rd
@@ -522,13 +509,13 @@ cd:
 	.bss
 	.align	2
 	.set	.LANCHOR1,. + 0
-	.type	p1Score, %object
-	.size	p1Score, 4
-p1Score:
-	.space	4
 	.type	gameOver, %object
 	.size	gameOver, 4
 gameOver:
+	.space	4
+	.type	p1Score, %object
+	.size	p1Score, 4
+p1Score:
 	.space	4
 	.type	p2Score, %object
 	.size	p2Score, 4

@@ -15,6 +15,7 @@ void drawRect(int row, int col, int height, int width, unsigned short color);
 void waitForVblank();
 void drawPlayer(int row, int col, unsigned short color);
 void drawBall(int row, int col, int radius, unsigned short color);
+void delay(int n);
 void updatePaddle1();
 void updatePaddle2();
 void updateScore1();
@@ -887,17 +888,15 @@ extern long double wcstold (const wchar_t *, wchar_t **);
 
 # 5 "main.c" 2
 
-void delay(int n);
-
- int row = 80;
- int col = 120;
- int rd = 1;
- int cd = 1;
- int p1Row = 80;
- int p2Row = 80;
- int p1Score = 0;
- int p2Score = 0;
- int gameOver = 0;
+int row = 80;
+int col = 120;
+int rd = 1;
+int cd = 1;
+int p1Row = 80;
+int p2Row = 80;
+int p1Score = 0;
+int p2Score = 0;
+int gameOver = 0;
 
 int main()
 {
@@ -908,55 +907,13 @@ int main()
   updatePaddle2();
   row += rd;
   col += cd;
-  waitForVBlank();
   draw();
-  delay(1);
+  waitForVBlank();
   erase();
-
-  if(row < 28){
-   row = 28;
-   rd = -rd;
-  }
-
-  if(row > 132){
-   row = 132;
-   rd = -rd;
-  }
-
-  if(col == 5) {
-   if(row > (p1Row - 20)){
-    if (row < (p1Row + 20)) {
-     col = 6;
-     cd = -cd;
-    }
-   }
-  }
-
-  if(col == 0) {
-   p2Score++;
-   updateScore2();
-   col = 1;
-   cd = -cd;
-
-  }
-
-  if(col == 236) {
-   if(row > (p2Row - 20)){
-    if(row < (p2Row + 20)) {
-     col = 235;
-     cd = -cd;
-    }
-   }
-  }
-
-  if(col == 239) {
-   p1Score++;
-   updateScore1();
-   col = 238;
-   cd = -cd;
-  }
+  handleCollisions();
  }
 }
+
 
 void draw()
 {
@@ -970,15 +927,6 @@ void erase()
  drawBall(row, col, 3, 0);
  drawPlayer(p1Row, 0, 0);
  drawPlayer(p2Row, 236, 0);
-}
-
-void delay(int n)
-{
- volatile int x = 0;
- for(int i = 0; i < n * 10000; i++)
- {
-  x = x + 1;
- }
 }
 
 
@@ -1016,6 +964,7 @@ void updatePaddle2()
   }
  }
 }
+
 
 void borders()
 {
@@ -1059,5 +1008,52 @@ void updateScore2()
  } else if(p2Score == 3) {
   drawRect(10, 215, 2, 2, ((31) | (0)<<5 | (0)<<10));
   gameOver = 1;
+ }
+}
+
+
+void handleCollisions()
+{
+
+ if(row < 28){
+  row = 28;
+  rd = -rd;
+ }
+
+ if(row > 132){
+  row = 132;
+  rd = -rd;
+ }
+
+ if(col == 5) {
+  if(row > (p1Row - 20)){
+   if (row < (p1Row + 20)) {
+    col = 6;
+    cd = -cd;
+   }
+  }
+ }
+
+ if(col == 0) {
+  p2Score++;
+  updateScore2();
+  col = 1;
+  cd = -cd;
+ }
+
+ if(col == 236) {
+  if(row > (p2Row - 20)){
+   if(row < (p2Row + 20)) {
+    col = 235;
+    cd = -cd;
+   }
+  }
+ }
+
+ if(col == 239) {
+  p1Score++;
+  updateScore1();
+  col = 238;
+  cd = -cd;
  }
 }

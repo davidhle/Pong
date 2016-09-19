@@ -1,19 +1,17 @@
-// Welcome to my ~game~
+// Welcome to my ~game~ -David Le
 #include "myLib.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-void delay(int n);
-
-	int row = 80;
-	int col = 120;
-	int rd = 1;
-	int cd = 1;
-	int p1Row = 80;
-	int p2Row = 80;
-	int p1Score = 0;
-	int p2Score = 0;
-	int gameOver = 0;
+int row = 80;
+int col = 120;
+int rd = 1;
+int cd = 1;
+int p1Row = 80;
+int p2Row = 80;
+int p1Score = 0;
+int p2Score = 0;
+int gameOver = 0;
 
 int main()
 {
@@ -24,77 +22,26 @@ int main()
 		updatePaddle2();
 		row += rd;
 		col += cd;
-		waitForVBlank();
 		draw();
-		delay(1);
+		waitForVBlank();
 		erase();
-		//Checks if ball hits top border
-		if(row < 28){
-			row = 28;
-			rd = -rd;
-		}
-		//Checks if ball hits bottom border
-		if(row > 132){
-			row = 132;
-			rd = -rd;
-		}
-		//Checks for collision with left paddle
-		if(col == 5) {
-			if(row > (p1Row - 20)){
-				if (row < (p1Row + 20)) {
-					col = 6;
-					cd = -cd;
-				}
-			}
-		}
-		//Checks if ball hits left wall
-		if(col == 0) {
-			p2Score++;
-			updateScore2();
-			col = 1;
-			cd = -cd;
-
-		}
-		//Checks for collision with right paddle
-		if(col == 236) {
-			if(row > (p2Row - 20)){
-				if(row < (p2Row + 20)) {
-					col = 235;
-					cd = -cd;
-				}
-			}
-		}
-		//Checks if ball hits right wall
-		if(col == 239) {
-			p1Score++;
-			updateScore1();
-			col = 238;
-			cd = -cd;
-		}
+		handleCollisions();
 	}
 }
 
+//Draws the ball and players
 void draw() 
 {
 	drawBall(row, col, 3, RED);
 	drawPlayer(p1Row, 0, CYAN);
 	drawPlayer(p2Row, 236, GREEN);
 }
-
+//Erases the "trail" that the "objects make when they move"
 void erase() 
 {
 	drawBall(row, col, 3, BLACK);
 	drawPlayer(p1Row, 0, BLACK);
 	drawPlayer(p2Row, 236, BLACK);
-}
-
-void delay(int n)
-{
-	volatile int x = 0;
-	for(int i = 0; i < n * 10000; i++)
-	{
-		x = x + 1;
-	}
 }
 
 //handles movement of player 1's paddle
@@ -133,6 +80,7 @@ void updatePaddle2()
 	}
 }
 
+//For the aesthetic!!
 void borders()
 {
 	for(int r = 24; r < 25; r++) {
@@ -153,7 +101,7 @@ void borders()
 		}
 	}
 }
-
+//Makes squares for when a point is scored
 void updateScore1()
 {
 	if(p1Score == 1) {
@@ -165,7 +113,7 @@ void updateScore1()
 		gameOver = 1;
 	}
 }
-
+//Makes squares for when a point is scored
 void updateScore2()
 {
 	if(p2Score == 1) {
@@ -175,5 +123,52 @@ void updateScore2()
 	} else if(p2Score == 3) {
 		drawRect(10, 215, 2, 2, RED);
 		gameOver = 1;
+	}
+}
+
+//Deals with all collisions i.e., against the wall, hits a paddle etc.
+void handleCollisions()
+{
+	//Checks if ball hits top border
+	if(row < 28){
+		row = 28;
+		rd = -rd;
+	}
+	//Checks if ball hits bottom border
+	if(row > 132){
+		row = 132;
+		rd = -rd;
+	}
+	//Checks for collision with left paddle
+	if(col == 5) {
+		if(row > (p1Row - 20)){
+			if (row < (p1Row + 20)) {
+				col = 6;
+				cd = -cd;
+			}
+		}
+	}
+	//Checks if ball hits left wall
+	if(col == 0) {
+		p2Score++;
+		updateScore2();
+		col = 1;
+		cd = -cd;
+	}
+	//Checks for collision with right paddle
+	if(col == 236) {
+		if(row > (p2Row - 20)){
+			if(row < (p2Row + 20)) {
+				col = 235;
+				cd = -cd;
+			}
+		}
+	}
+	//Checks if ball hits right wall
+	if(col == 239) {
+		p1Score++;
+		updateScore1();
+		col = 238;
+		cd = -cd;
 	}
 }

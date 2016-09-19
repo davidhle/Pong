@@ -43,6 +43,7 @@ void drawRect(int row, int col, int height, int width, unsigned short color);
 void waitForVblank();
 void drawPlayer(int row, int col, unsigned short color);
 void drawBall(int row, int col, int radius, unsigned short color);
+void delay(int n);
 void updatePaddle1();
 void updatePaddle2();
 void updateScore1();
@@ -50,8 +51,6 @@ void updateScore2();
 void draw();
 void erase();
 void borders();
-
-
 
 // *** Input =========================================================
 
