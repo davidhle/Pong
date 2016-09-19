@@ -41,6 +41,9 @@ extern unsigned short *videoBuffer;
 void setPixel(int, int, unsigned short);
 void drawRect(int row, int col, int height, int width, volatile unsigned short color);
 void waitForVblank();
+void drawPlayer(int row, int col, unsigned short color);
+void drawBall(int row, int col, int radius, unsigned short color);
+
 
 
 // *** Input =========================================================
