@@ -19,6 +19,9 @@ typedef unsigned int u32;
 #define BG2_ENABLE (1<<10)
 #define BG3_ENABLE (1<<11)
 
+#define SCREENWIDTH 240
+#define SCREENHEIGHT 160
+
 #define SCREENOFFSET(r,c) ((r)*240+(c))
 #define OFFSET(r,c,rowlen) ((r)*(rowlen)+(c))
 
@@ -40,9 +43,6 @@ extern unsigned short *videoBuffer;
 // Prototypes
 void setPixel(int, int, unsigned short);
 void drawRect(int row, int col, int height, int width, unsigned short color);
-void waitForVblank();
-void drawPlayer(int row, int col, unsigned short color);
-void drawBall(int row, int col, int radius, unsigned short color);
 void delay(int n);
 void updatePaddle1();
 void updatePaddle2();
@@ -51,6 +51,8 @@ void updateScore2();
 void draw();
 void erase();
 void borders();
+void update();
+void waitForVBlank();
 
 // *** Input =========================================================
 
@@ -82,3 +84,66 @@ void borders();
 // TODO: add two macros to handle buttons
 #define BUTTON_HELD(key) (~(BUTTONS) & key)
 #define BUTTON_PRESSED(key) (!(~oldButtons&(key))&&(~buttons&(key)))
+
+
+// *** DMA =========================================================
+
+void DMANow(int channel, volatile const void* source, volatile const void* destination, unsigned int control);
+
+// DMA channel 3 register definitions
+#define REG_DMA3SAD         *(volatile u32*)0x40000D4  // source address
+#define REG_DMA3DAD         *(volatile u32*)0x40000D8  // destination address
+#define REG_DMA3CNT         *(volatile u32*)0x40000DC  // control register
+
+//Structs
+
+typedef struct
+{
+        const volatile void *src;
+        const volatile void *dst;
+        unsigned int cnt;
+} DMA_CONTROLLER;
+
+typedef struct
+{
+	int row;
+	int col;
+	u16 color;
+	int height;
+	int width;
+	int score;
+} PLAYER;
+
+typedef struct 
+{
+	int row;
+	int col;
+	int radius;
+	u16 color;
+	int rd;
+	int cd;
+} BALL;
+
+#define DMA ((volatile DMA_CONTROLLER *) 0x40000B0)
+
+#define DMA_DESTINATION_INCREMENT (0 << 21)
+#define DMA_DESTINATION_DECREMENT (1 << 21)
+#define DMA_DESTINATION_FIXED (2 << 21)
+#define DMA_DESTINATION_RESET (3 << 21)
+
+#define DMA_SOURCE_INCREMENT (0 << 23)
+#define DMA_SOURCE_DECREMENT (1 << 23)
+#define DMA_SOURCE_FIXED (2 << 23)
+
+#define DMA_REPEAT (1 << 25)
+
+#define DMA_16 (0 << 26)
+#define DMA_32 (1 << 26)
+
+#define DMA_NOW (0 << 28)
+#define DMA_AT_VBLANK (1 << 28)
+#define DMA_AT_HBLANK (2 << 28)
+#define DMA_AT_REFRESH (3 << 28)
+
+#define DMA_IRQ (1 << 30)
+#define DMA_ON (1 << 31)

@@ -7,14 +7,11 @@
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
-# 25 "myLib.h"
+# 28 "myLib.h"
 extern unsigned short *videoBuffer;
-# 41 "myLib.h"
+# 44 "myLib.h"
 void setPixel(int, int, unsigned short);
 void drawRect(int row, int col, int height, int width, unsigned short color);
-void waitForVblank();
-void drawPlayer(int row, int col, unsigned short color);
-void drawBall(int row, int col, int radius, unsigned short color);
 void delay(int n);
 void updatePaddle1();
 void updatePaddle2();
@@ -23,6 +20,37 @@ void updateScore2();
 void draw();
 void erase();
 void borders();
+void update();
+void waitForVBlank();
+# 91 "myLib.h"
+void DMANow(int channel, volatile const void* source, volatile const void* destination, unsigned int control);
+# 100 "myLib.h"
+typedef struct
+{
+        const volatile void *src;
+        const volatile void *dst;
+        unsigned int cnt;
+} DMA_CONTROLLER;
+
+typedef struct
+{
+ int row;
+ int col;
+ u16 color;
+ int height;
+ int width;
+ int score;
+} PLAYER;
+
+typedef struct
+{
+ int row;
+ int col;
+ int radius;
+ u16 color;
+ int rd;
+ int cd;
+} BALL;
 # 3 "main.c" 2
 # 1 "c:\\devkitarm\\bin\\../lib/gcc/arm-eabi/4.5.0/../../../../arm-eabi/include/stdio.h" 1 3
 # 29 "c:\\devkitarm\\bin\\../lib/gcc/arm-eabi/4.5.0/../../../../arm-eabi/include/stdio.h" 3
@@ -887,62 +915,137 @@ extern long double wcstold (const wchar_t *, wchar_t **);
 
 
 # 5 "main.c" 2
+# 1 "text.h" 1
+# 9 "text.h"
+void drawChar(int , int , char , unsigned short );
+void drawString(int row, int col, char *str, unsigned short color);
 
-int row = 80;
-int col = 120;
-int rd = 1;
-int cd = 1;
-int p1Row = 80;
-int p2Row = 80;
-int p1Score = 0;
-int p2Score = 0;
-int gameOver = 0;
+extern const unsigned char fontdata_6x8[12288];
+# 6 "main.c" 2
+
+int gameOver;
+char buffer[41];
+
+
+PLAYER player1;
+PLAYER player2;
+BALL ball;
+
+void drawPlayer(PLAYER*);
+void drawBall(BALL*);
 
 int main()
 {
  (*(u16 *)0x4000000) = (1<<10) | 3;
+ initialize();
  while(gameOver == 0) {
-  borders();
-  updatePaddle1();
-  updatePaddle2();
-  row += rd;
-  col += cd;
+  update();
   draw();
   waitForVBlank();
   erase();
-  handleCollisions();
  }
+}
+
+void initialize()
+{
+ borders();
+ gameOver = 0;
+ player1.row = 70;
+ player1.col = 0;
+ player1.height = 20;
+ player1.width = 4;
+ player1.color = ((0) | (31)<<5 | (31)<<10);
+ player1.score = 0;
+
+ player2.row = 70;
+ player2.col = 236;
+ player2.height = 20;
+ player2.width = 4;
+ player2.color = ((0) | (31)<<5 | (0)<<10);
+ player2.score = 0;
+
+ ball.row = 80;
+ ball.col = 120;
+ ball.radius = 3;
+ ball.rd = 1;
+ ball.cd = 1;
+ ball.color = ((31) | (0)<<5 | (0)<<10);
 }
 
 
 void draw()
 {
- drawBall(row, col, 3, ((31) | (0)<<5 | (0)<<10));
- drawPlayer(p1Row, 0, ((0) | (31)<<5 | (31)<<10));
- drawPlayer(p2Row, 236, ((0) | (31)<<5 | (0)<<10));
+ PLAYER* p1 = &player1;
+ PLAYER* p2 = &player2;
+ BALL* b = &ball;
+ drawBall(b);
+ drawPlayer(p1);
+ drawPlayer(p2);
+ sprintf(buffer, "Player 1 Score: %d", (p1->score));
+ drawString(10, 7 + (1/2), buffer, ((0) | (31)<<5 | (31)<<10));
+ sprintf(buffer, "Player 2 Score: %d", (p2->score));
+ drawString(10, 130 + (1/2), buffer, ((0) | (31)<<5 | (0)<<10));
 }
 
 void erase()
 {
- drawBall(row, col, 3, 0);
- drawPlayer(p1Row, 0, 0);
- drawPlayer(p2Row, 236, 0);
+ PLAYER* p1 = &player1;
+ PLAYER* p2 = &player2;
+ BALL* b = &ball;
+ eraseBall(b);
+ erasePlayer(p1);
+ erasePlayer(p2);
+}
+
+void drawBall(BALL* ball)
+{
+ int rsq = ball -> radius * ball -> radius;
+ for(int y = ball -> radius * -1; y <= ball -> radius; y++) {
+  for(int x = ball -> radius * -1; x <= ball -> radius; x++) {
+   if((x*x) + (y*y) <= rsq) {
+    setPixel(ball->row+x, ball->col+y, ball->color);
+   }
+  }
+ }
+}
+
+void eraseBall(BALL* ball)
+{
+ int rsq = ball -> radius * ball -> radius;
+ for(int y = ball -> radius * -1; y <= ball -> radius; y++) {
+  for(int x = ball -> radius * -1; x <= ball -> radius; x++) {
+   if((x*x) + (y*y) <= rsq) {
+    setPixel(ball->row+x, ball->col+y, 0);
+   }
+  }
+ }
+}
+
+void drawPlayer(PLAYER* p)
+{
+ drawRect(p->row, p->col, p->height, p->width, p->color);
+}
+
+void erasePlayer(PLAYER* p)
+{
+ drawRect(p->row, p->col, p->height, p->width, 0);
 }
 
 
 void updatePaddle1()
 {
+ PLAYER* p1 = &player1;
  if((~((*(volatile unsigned int *)0x04000130)) & 64)){
-  p1Row = p1Row - 3;
-  if(p1Row < 25) {
-   p1Row = 25;
+  (p1->row) = (p1->row) - 3;
+  if((p1->row) < 25) {
+   (p1->row) = 25;
   }
 
  }
  if((~((*(volatile unsigned int *)0x04000130)) & 128)){
-  p1Row = p1Row + 3;
-  if(p1Row > 115) {
-   p1Row = 115;
+  (p1->row) = (p1->row) + 3;
+  if((p1->row) > 115) {
+   (p1->row) = 115;
   }
  }
 }
@@ -950,17 +1053,18 @@ void updatePaddle1()
 
 void updatePaddle2()
 {
+ PLAYER* p2 = &player2;
  if((~((*(volatile unsigned int *)0x04000130)) & 32)){
-  p2Row = p2Row - 3;
-  if(p2Row < 25) {
-   p2Row = 25;
+  (p2->row) = (p2->row) - 3;
+  if((p2->row) < 25) {
+   (p2->row) = 25;
   }
 
  }
  if((~((*(volatile unsigned int *)0x04000130)) & 16)){
-  p2Row = p2Row + 3;
-  if(p2Row > 115) {
-   p2Row = 115;
+  (p2->row) = (p2->row) + 3;
+  if((p2->row) > 115) {
+   (p2->row) = 115;
   }
  }
 }
@@ -989,71 +1093,86 @@ void borders()
 
 void updateScore1()
 {
- if(p1Score == 1) {
-  drawRect(10, 100, 2, 2, ((0) | (31)<<5 | (31)<<10));
- } else if(p1Score == 2) {
-  drawRect(10, 60, 2, 2, ((0) | (31)<<5 | (31)<<10));
- } else if(p1Score == 3) {
-  drawRect(10, 20, 2, 2, ((31) | (0)<<5 | (0)<<10));
+ PLAYER* p1 = &player1;
+
+ sprintf(buffer, "Player 1 Score: %d", (p1->score) - 1);
+ drawString(10, 7 + (1/2), buffer, 0);
+ sprintf(buffer, "Player 1 Score: %d", (p1->score));
+ drawString(10, 7 + (1/2), buffer, ((0) | (31)<<5 | (31)<<10));
+ if ((p1->score) == 3) {
+ sprintf(buffer, "Player 1 Wins!");
+ drawString(145, 80, buffer, ((0) | (31)<<5 | (31)<<10));
   gameOver = 1;
  }
 }
 
 void updateScore2()
 {
- if(p2Score == 1) {
-  drawRect(10, 135, 2, 2, ((0) | (31)<<5 | (0)<<10));
- } else if(p2Score == 2) {
-  drawRect(10, 175, 2, 2, ((0) | (31)<<5 | (0)<<10));
- } else if(p2Score == 3) {
-  drawRect(10, 215, 2, 2, ((31) | (0)<<5 | (0)<<10));
+ PLAYER* p2 = &player2;
+
+ sprintf(buffer, "Player 2 Score: %d", (p2->score) - 1);
+ drawString(10, 130 + (1/2), buffer, 0);
+ sprintf(buffer, "Player 2 Score: %d", (p2->score));
+ drawString(10, 130 + (1/2), buffer, ((0) | (31)<<5 | (0)<<10));
+ if ((p2->score) == 3) {
+  sprintf(buffer, "Player 2 Wins!");
+  drawString(145, 80, buffer, ((0) | (31)<<5 | (0)<<10));
   gameOver = 1;
  }
 }
 
 
-void handleCollisions()
+void update()
 {
+ PLAYER* p1 = &player1;
+ PLAYER* p2 = &player2;
+ BALL* b = &ball;
 
- if(row < 28){
-  row = 28;
-  rd = -rd;
+ b->row += b->rd;
+ b->col += b->cd;
+
+
+ if((b->row) <= 28){
+  (b->row) = 29;
+  (b->rd) = (b->rd * -1);
  }
 
- if(row > 132){
-  row = 132;
-  rd = -rd;
+ if((b->row) >= 131){
+  (b->row) = 130;
+  (b->rd) = (b->rd * -1);
  }
 
- if(col == 5) {
-  if(row > (p1Row - 20)){
-   if (row < (p1Row + 20)) {
-    col = 6;
-    cd = -cd;
+ if((b->col) == 5) {
+  if((b->row) > ((p1->row) - 20)){
+   if ((b->row) < ((p1->row) + 20)) {
+    (b->col) = 6;
+    (b->cd) = (b->cd * -1);
    }
   }
  }
 
- if(col == 0) {
-  p2Score++;
+ if((b->col) <= 1) {
+  p2 -> score = p2 -> score++;
   updateScore2();
-  col = 1;
-  cd = -cd;
+  (b->col) = 2;
+  (b->cd) = (b->cd * -1);
  }
 
- if(col == 236) {
-  if(row > (p2Row - 20)){
-   if(row < (p2Row + 20)) {
-    col = 235;
-    cd = -cd;
+ if((b->col) == 236) {
+  if((b->row) > ((p2->row) - 20)){
+   if((b->row) < ((p1->row) + 20)) {
+    (b->col) = 235;
+    (b->cd) = (b->cd * -1);
    }
   }
  }
 
- if(col == 239) {
-  p1Score++;
+ if((b->col) >= 239) {
+  p1 -> score = p1 -> score++;
   updateScore1();
-  col = 238;
-  cd = -cd;
+  (b->col) = 238;
+  (b->cd) = (b->cd * -1);
  }
+ updatePaddle1();
+ updatePaddle2();
 }

@@ -6,14 +6,11 @@
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
-# 25 "myLib.h"
+# 28 "myLib.h"
 extern unsigned short *videoBuffer;
-# 41 "myLib.h"
+# 44 "myLib.h"
 void setPixel(int, int, unsigned short);
 void drawRect(int row, int col, int height, int width, unsigned short color);
-void waitForVblank();
-void drawPlayer(int row, int col, unsigned short color);
-void drawBall(int row, int col, int radius, unsigned short color);
 void delay(int n);
 void updatePaddle1();
 void updatePaddle2();
@@ -22,6 +19,37 @@ void updateScore2();
 void draw();
 void erase();
 void borders();
+void update();
+void waitForVBlank();
+# 91 "myLib.h"
+void DMANow(int channel, volatile const void* source, volatile const void* destination, unsigned int control);
+# 100 "myLib.h"
+typedef struct
+{
+        const volatile void *src;
+        const volatile void *dst;
+        unsigned int cnt;
+} DMA_CONTROLLER;
+
+typedef struct
+{
+ int row;
+ int col;
+ u16 color;
+ int height;
+ int width;
+ int score;
+} PLAYER;
+
+typedef struct
+{
+ int row;
+ int col;
+ int radius;
+ u16 color;
+ int rd;
+ int cd;
+} BALL;
 # 2 "myLib.c" 2
 
 u16 *videoBuffer = (u16 *)0x6000000;
@@ -32,39 +60,24 @@ void setPixel(int row, int col, u16 color)
 }
 
 
-void drawPlayer(int row, int col, u16 color)
-{
- for(int height = 0; height < 20; height++) {
-  for(int width = 0; width < 4; width++) {
-   setPixel(row + height, col + width, color);
-  }
- }
-}
-
-
-void drawBall(int row, int col, int radius, u16 color)
-{
- int rsq = radius * radius;
- for(int y = -radius; y <= radius; y++) {
-  for(int x = -radius; x <= radius; x++) {
-   if((x*x) + (y*y) <= rsq) {
-    setPixel(row+x, col+y, color);
-   }
-  }
- }
-}
-
 void drawRect(int row, int col, int height, int width, u16 color)
 {
- for(int r = row; r < row + 5; r++) {
-  for(int c = col; c < col +5; c++) {
-   setPixel(r, c, color);
-  }
- }
+ volatile unsigned short c = color;
+ for(int r = 0; r < height; r++) {
+     DMANow(3, &c, &videoBuffer[((row + r)*(240)+(col))], (2 << 23) | width);
+    }
 }
 
 void waitForVBlank()
 {
  while((*(volatile unsigned short *)0x4000006) > 160);
  while((*(volatile unsigned short *)0x4000006) < 160);
+}
+
+
+void DMANow(int channel, volatile const void* source, volatile const void* destination, unsigned int control)
+{
+ ((volatile DMA_CONTROLLER *) 0x40000B0)[channel].src = source;
+ ((volatile DMA_CONTROLLER *) 0x40000B0)[channel].dst = destination;
+ ((volatile DMA_CONTROLLER *) 0x40000B0)[channel].cnt = (1 << 31) | control;
 }
